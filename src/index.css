@@ -1,0 +1,206 @@
+:root {
+  --blu: #1e3a8a;
+  --blu-scuro: #172d6e;
+  --sfondo: #f8fafc;
+  --carta: #ffffff;
+  --testo: #0f172a;
+  --testo-secondario: #64748b;
+  --bordo: #e2e8f0;
+  --verde: #15803d;
+  --rosso: #b91c1c;
+  --raggio: 12px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  background: var(--sfondo);
+  color: var(--testo);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 1rem 1rem 2rem;
+}
+
+.intestazione {
+  padding: 1.25rem 0 0.5rem;
+  text-align: center;
+}
+
+h1 {
+  font-size: 1.6rem;
+  line-height: 1.25;
+  margin: 0 0 0.5rem;
+  color: var(--blu);
+}
+
+.sottotitolo {
+  margin: 0 auto 1rem;
+  color: var(--testo-secondario);
+  font-size: 0.95rem;
+  max-width: 34rem;
+}
+
+.scheda {
+  background: var(--carta);
+  border: 1px solid var(--bordo);
+  border-radius: var(--raggio);
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+h2 {
+  font-size: 1.1rem;
+  margin: 0 0 1rem;
+}
+
+h3 {
+  font-size: 1rem;
+  margin: 1.25rem 0 0.25rem;
+}
+
+.campo {
+  margin-bottom: 1rem;
+}
+
+.campo:last-child {
+  margin-bottom: 0;
+}
+
+.campo > label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 0.35rem;
+}
+
+input[type='number'],
+select {
+  width: 100%;
+  font: inherit;
+  font-size: 1rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--bordo);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--testo);
+}
+
+input[type='number']:focus,
+select:focus {
+  outline: 2px solid var(--blu);
+  outline-offset: 1px;
+  border-color: var(--blu);
+}
+
+.campo-checkbox label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.campo-checkbox input {
+  margin-top: 0.2rem;
+  accent-color: var(--blu);
+}
+
+.avviso {
+  margin: 0.5rem 0 0;
+  color: var(--rosso);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.riga {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--bordo);
+}
+
+.riga-label {
+  font-size: 0.92rem;
+}
+
+.riga-label small {
+  display: block;
+  color: var(--testo-secondario);
+  font-size: 0.78rem;
+}
+
+.riga-valore {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.riga-evidenziata .riga-valore {
+  color: var(--verde);
+  font-size: 1.15rem;
+}
+
+.accantonamento {
+  margin-top: 1rem;
+  background: var(--blu);
+  color: #fff;
+  border-radius: var(--raggio);
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.accantonamento-valore {
+  font-size: 1.9rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.accantonamento-label {
+  font-size: 0.88rem;
+  opacity: 0.92;
+}
+
+.testo-seo p {
+  font-size: 0.92rem;
+  color: #334155;
+  margin: 0.5rem 0;
+}
+
+.disclaimer {
+  font-size: 0.8rem !important;
+  color: var(--testo-secondario) !important;
+  border-top: 1px solid var(--bordo);
+  padding-top: 0.75rem;
+  margin-top: 1rem !important;
+}
+
+.pie-pagina {
+  text-align: center;
+  color: var(--testo-secondario);
+  font-size: 0.8rem;
+}
+
+@media (min-width: 700px) {
+  .app {
+    padding-top: 2rem;
+  }
+
+  h1 {
+    font-size: 2rem;
+  }
+}
