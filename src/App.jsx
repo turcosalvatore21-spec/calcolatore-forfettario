@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
 import { GRUPPI_ATECO, CASSE, LIMITE_RICAVI, calcolaForfettario } from './lib/calcolo.js'
+import { useAuth } from './hooks/useAuth.js'
+import AuthModal from './components/AuthModal.jsx'
 
 const euro = new Intl.NumberFormat('it-IT', {
   style: 'currency',
@@ -24,12 +26,38 @@ function Riga({ label, value, evidenzia, nota }) {
   )
 }
 
+function BarraUtente({ onApriAccesso }) {
+  const { user, loading, signOut } = useAuth()
+
+  if (loading) return <div className="barra-utente" aria-hidden="true" />
+
+  return (
+    <div className="barra-utente">
+      {user ? (
+        <>
+          <span className="utente-email" title={user.email}>
+            {user.email}
+          </span>
+          <button type="button" className="bottone bottone-contorno" onClick={() => signOut()}>
+            Esci
+          </button>
+        </>
+      ) : (
+        <button type="button" className="bottone bottone-pieno" onClick={onApriAccesso}>
+          Accedi
+        </button>
+      )}
+    </div>
+  )
+}
+
 export default function App() {
   const [ricavi, setRicavi] = useState('30000')
   const [gruppoId, setGruppoId] = useState('professionisti')
   const [anniAttivita, setAnniAttivita] = useState('1')
   const [cassaId, setCassaId] = useState('gestione-separata')
   const [riduzione35, setRiduzione35] = useState(false)
+  const [modaleAuthAperto, setModaleAuthAperto] = useState(false)
 
   const ricaviNum = Number(ricavi) || 0
   const mostraRiduzione = cassaId !== 'gestione-separata'
@@ -49,6 +77,7 @@ export default function App() {
   return (
     <div className="app">
       <header className="intestazione">
+        <BarraUtente onApriAccesso={() => setModaleAuthAperto(true)} />
         <h1>Calcolo tasse regime forfettario</h1>
         <p className="sottotitolo">
           Calcola gratis imposta sostitutiva, contributi INPS e netto annuo della tua partita IVA
@@ -193,6 +222,8 @@ export default function App() {
       <footer className="pie-pagina">
         <p>Calcolatore Forfettario — funziona anche offline, installalo come app.</p>
       </footer>
+
+      <AuthModal aperto={modaleAuthAperto} onChiudi={() => setModaleAuthAperto(false)} />
     </div>
   )
 }

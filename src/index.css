@@ -195,6 +195,161 @@ select:focus {
   font-size: 0.8rem;
 }
 
+/* Autenticazione */
+
+.barra-utente {
+  min-height: 2.4rem;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.utente-email {
+  font-size: 0.85rem;
+  color: var(--testo-secondario);
+  max-width: 16rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bottone {
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.bottone-pieno {
+  background: var(--blu);
+  color: #fff;
+  border: 1px solid var(--blu);
+}
+
+.bottone-pieno:hover {
+  background: var(--blu-scuro);
+}
+
+.bottone-pieno:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.bottone-contorno {
+  background: transparent;
+  color: var(--blu);
+  border: 1px solid var(--bordo);
+}
+
+.bottone-contorno:hover {
+  border-color: var(--blu);
+}
+
+.modale-sfondo {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 50;
+}
+
+.modale {
+  position: relative;
+  width: 100%;
+  max-width: 26rem;
+  margin-bottom: 0;
+}
+
+.modale-chiudi {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--testo-secondario);
+  cursor: pointer;
+  padding: 0.25rem;
+}
+
+.modale-chiudi:hover {
+  color: var(--testo);
+}
+
+.auth-tab {
+  display: flex;
+  gap: 0.25rem;
+  background: var(--sfondo);
+  border: 1px solid var(--bordo);
+  border-radius: 8px;
+  padding: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.auth-tab button {
+  flex: 1;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.45rem 0.25rem;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--testo-secondario);
+  cursor: pointer;
+}
+
+.auth-tab button.attivo {
+  background: var(--carta);
+  color: var(--blu);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.1);
+}
+
+.modale input[type='email'],
+.modale input[type='password'] {
+  width: 100%;
+  font: inherit;
+  font-size: 1rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--bordo);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--testo);
+}
+
+.modale input[type='email']:focus,
+.modale input[type='password']:focus {
+  outline: 2px solid var(--blu);
+  outline-offset: 1px;
+  border-color: var(--blu);
+}
+
+.modale .bottone {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.auth-nota {
+  font-size: 0.85rem;
+  color: var(--testo-secondario);
+  margin: 0 0 0.5rem;
+}
+
+.auth-conferma {
+  font-size: 0.92rem;
+  color: var(--verde);
+  font-weight: 500;
+  margin: 0 0 0.75rem;
+}
+
 @media (min-width: 700px) {
   .app {
     padding-top: 2rem;
