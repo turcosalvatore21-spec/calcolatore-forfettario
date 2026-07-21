@@ -1,7 +1,9 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { GRUPPI_ATECO, CASSE, LIMITE_RICAVI, calcolaForfettario } from './lib/calcolo.js'
 import { useAuth } from './hooks/useAuth.js'
 import AuthModal from './components/AuthModal.jsx'
+import SalvaSimulazione from './components/SalvaSimulazione.jsx'
+import MieSimulazioni from './components/MieSimulazioni.jsx'
 
 const euro = new Intl.NumberFormat('it-IT', {
   style: 'currency',
@@ -58,6 +60,7 @@ export default function App() {
   const [cassaId, setCassaId] = useState('gestione-separata')
   const [riduzione35, setRiduzione35] = useState(false)
   const [modaleAuthAperto, setModaleAuthAperto] = useState(false)
+  const [versioneSimulazioni, setVersioneSimulazioni] = useState(0)
 
   const ricaviNum = Number(ricavi) || 0
   const mostraRiduzione = cassaId !== 'gestione-separata'
@@ -73,6 +76,29 @@ export default function App() {
       }),
     [ricaviNum, gruppoId, anniAttivita, cassaId, riduzione35, mostraRiduzione]
   )
+
+  // Input correnti nel formato salvato su Supabase (colonna jsonb "dati")
+  const datiCorrenti = useMemo(
+    () => ({
+      ricavi: ricaviNum,
+      gruppoId,
+      anniAttivita: Number(anniAttivita),
+      cassaId,
+      riduzione35: mostraRiduzione && riduzione35
+    }),
+    [ricaviNum, gruppoId, anniAttivita, cassaId, riduzione35, mostraRiduzione]
+  )
+
+  const caricaSimulazione = useCallback((dati) => {
+    if (!dati) return
+    setRicavi(String(dati.ricavi ?? ''))
+    if (GRUPPI_ATECO.some((g) => g.id === dati.gruppoId)) setGruppoId(dati.gruppoId)
+    const anni = Number(dati.anniAttivita)
+    setAnniAttivita(anni >= 1 && anni <= 6 ? String(anni) : '1')
+    if (CASSE.some((c) => c.id === dati.cassaId)) setCassaId(dati.cassaId)
+    setRiduzione35(Boolean(dati.riduzione35))
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [])
 
   return (
     <div className="app">
@@ -186,7 +212,15 @@ export default function App() {
               da accantonare su ogni fattura per coprire tasse e contributi
             </span>
           </div>
+
+          <SalvaSimulazione
+            dati={datiCorrenti}
+            onApriAccesso={() => setModaleAuthAperto(true)}
+            onSalvata={() => setVersioneSimulazioni((v) => v + 1)}
+          />
         </section>
+
+        <MieSimulazioni onCarica={caricaSimulazione} versione={versioneSimulazioni} />
 
         <section className="scheda testo-seo" aria-labelledby="titolo-info">
           <h2 id="titolo-info">Come funziona il calcolo delle tasse nel regime forfettario</h2>
