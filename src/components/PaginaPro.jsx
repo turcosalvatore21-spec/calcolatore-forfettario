@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useAuth } from '../hooks/useAuth.js'
 import { useAbbonamento } from '../hooks/useAbbonamento.js'
 import { apriCheckout } from '../lib/lemonjs.js'
-import { urlCheckout } from '../lib/lemonsqueezyConfig.js'
+import { PIANI, pianoConfigurato, urlCheckout } from '../lib/lemonsqueezyConfig.js'
 
 const dataBreve = new Intl.DateTimeFormat('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })
 
@@ -12,6 +12,30 @@ const NOME_PIANO = { monthly: 'mensile', annual: 'annuale' }
 // il webhook Lemon Squeezy può impiegare qualche secondo ad aggiornare Supabase.
 function ripianificaRicarica(ricarica) {
   ;[2000, 6000].forEach((ritardo) => setTimeout(ricarica, ritardo))
+}
+
+function BottonePiano({ id, config, inCorso, disabilitato, onClick }) {
+  if (!pianoConfigurato(id)) {
+    return (
+      <div className="piano-pro">
+        <h3>{config.etichetta}</h3>
+        <p className="piano-prezzo">{config.prezzo}</p>
+        <p className="avviso" role="alert">
+          Checkout non disponibile al momento per questo piano. Riprova più tardi.
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="piano-pro">
+      <h3>{config.etichetta}</h3>
+      <p className="piano-prezzo">{config.prezzo}</p>
+      <button type="button" className="bottone bottone-pieno" onClick={onClick} disabled={disabilitato}>
+        {inCorso ? 'Apertura checkout…' : `Passa a Pro — ${config.etichetta}`}
+      </button>
+    </div>
+  )
 }
 
 export default function PaginaPro({ onApriAccesso }) {
@@ -59,30 +83,16 @@ export default function PaginaPro({ onApriAccesso }) {
             Sblocca simulazioni salvate illimitate, confronto scenari ed export PDF.
           </p>
           <div className="piani-pro">
-            <div className="piano-pro">
-              <h3>Mensile</h3>
-              <p className="piano-prezzo">6€/mese</p>
-              <button
-                type="button"
-                className="bottone bottone-pieno"
-                onClick={() => onClickPassaAPro('monthly')}
-                disabled={pianoInCorso !== null}
-              >
-                {pianoInCorso === 'monthly' ? 'Apertura checkout…' : 'Passa a Pro — Mensile'}
-              </button>
-            </div>
-            <div className="piano-pro">
-              <h3>Annuale</h3>
-              <p className="piano-prezzo">49€/anno</p>
-              <button
-                type="button"
-                className="bottone bottone-pieno"
-                onClick={() => onClickPassaAPro('annual')}
-                disabled={pianoInCorso !== null}
-              >
-                {pianoInCorso === 'annual' ? 'Apertura checkout…' : 'Passa a Pro — Annuale'}
-              </button>
-            </div>
+            {Object.entries(PIANI).map(([id, config]) => (
+              <BottonePiano
+                key={id}
+                id={id}
+                config={config}
+                inCorso={pianoInCorso === id}
+                disabilitato={pianoInCorso !== null}
+                onClick={() => onClickPassaAPro(id)}
+              />
+            ))}
           </div>
           {!user && <p className="auth-nota">Accedi prima di procedere: il piano va collegato al tuo account.</p>}
           {errore && (

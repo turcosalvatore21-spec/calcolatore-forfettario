@@ -681,6 +681,19 @@ select:focus {
   margin-top: 0.75rem;
 }
 
+.errore-globale {
+  max-width: 32rem;
+  margin: 3rem auto;
+  padding: 1.5rem;
+  text-align: center;
+  color: var(--testo-secondario);
+}
+
+.errore-globale h1 {
+  color: var(--testo);
+  font-size: 1.3rem;
+}
+
 @media (min-width: 700px) {
   .app {
     padding-top: 2rem;
