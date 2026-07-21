@@ -1,6 +1,5 @@
 import crypto from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
-import { pianoDaVariantId } from '../src/lib/lemonsqueezyConfig.js'
 
 // Il webhook deve leggere il body raw per verificare la firma HMAC:
 // Vercel non deve parsarlo prima che arrivi qui.
@@ -12,6 +11,22 @@ export const config = {
 
 const EVENTI_ATTIVAZIONE = ['subscription_created', 'subscription_updated', 'subscription_resumed']
 const EVENTI_DISATTIVAZIONE = ['subscription_cancelled', 'subscription_expired']
+
+// Stessi nomi di env var VITE_LEMONSQUEEZY_VARIANT_* usati dal client
+// (src/lib/lemonsqueezyConfig.js), letti però da process.env: questo file
+// gira su Node (funzione serverless Vercel), non su Vite, quindi NON deve
+// importare quel modulo né usare import.meta.env (non esiste in questo
+// runtime e romperebbe il webhook).
+const VARIANT_MENSILE = process.env.VITE_LEMONSQUEEZY_VARIANT_MONTHLY || '1932382'
+const VARIANT_ANNUALE = process.env.VITE_LEMONSQUEEZY_VARIANT_ANNUAL || '1932369'
+
+/** Deduce il piano ('monthly' | 'annual') dal variant_id ricevuto dal webhook. */
+function pianoDaVariantId(variantId) {
+  const id = String(variantId)
+  if (id === VARIANT_MENSILE) return 'monthly'
+  if (id === VARIANT_ANNUALE) return 'annual'
+  return null
+}
 
 async function leggiBodyRaw(req) {
   const pezzi = []
