@@ -553,6 +553,80 @@ select:focus {
   font-weight: 700;
 }
 
+/* Proiezione annuale */
+
+.proiezione-intestazione {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.proiezione-intestazione h2 {
+  margin-bottom: 0.5rem;
+}
+
+.stato-salvataggio {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--testo-secondario);
+  white-space: nowrap;
+}
+
+.stato-salvato {
+  color: var(--verde);
+}
+
+.griglia-mesi {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem 0.6rem;
+  margin: 0.75rem 0 1rem;
+}
+
+.mese label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.82rem;
+  margin-bottom: 0.25rem;
+}
+
+.mese input[type='number'] {
+  padding: 0.5rem 0.6rem;
+  font-size: 0.95rem;
+}
+
+.mese-accantona {
+  display: block;
+  min-height: 1rem;
+  margin-top: 0.2rem;
+  font-size: 0.72rem;
+  color: var(--testo-secondario);
+  font-variant-numeric: tabular-nums;
+}
+
+.avviso-limite {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.proiezione-totali .riga:last-child {
+  border-bottom: none;
+}
+
+/* Bottone «Scarica PDF» */
+
+.scarica-pdf {
+  margin-top: 0.75rem;
+}
+
+.scarica-pdf > .bottone {
+  width: 100%;
+}
+
 @media (min-width: 700px) {
   .app {
     padding-top: 2rem;
@@ -560,5 +634,9 @@ select:focus {
 
   h1 {
     font-size: 2rem;
+  }
+
+  .griglia-mesi {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
