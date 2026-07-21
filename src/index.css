@@ -221,6 +221,8 @@ select:focus {
   padding: 0.5rem 1rem;
   border-radius: 8px;
   cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
   transition: background-color 0.15s ease;
 }
 
@@ -627,6 +629,58 @@ select:focus {
   width: 100%;
 }
 
+.badge-pro {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: var(--verde);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  vertical-align: middle;
+}
+
+.scheda-pro {
+  border-color: var(--blu);
+}
+
+.piani-pro {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.piano-pro {
+  border: 1px solid var(--bordo);
+  border-radius: var(--raggio);
+  padding: 1rem;
+  text-align: center;
+}
+
+.piano-pro h3 {
+  margin-top: 0;
+}
+
+.piano-prezzo {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--blu);
+  margin: 0 0 0.75rem;
+}
+
+.piano-pro > .bottone {
+  width: 100%;
+}
+
+.upsell-pro {
+  border: 1px dashed var(--bordo);
+  border-radius: var(--raggio);
+  padding: 0.75rem 1rem;
+  margin-top: 0.75rem;
+}
+
 @media (min-width: 700px) {
   .app {
     padding-top: 2rem;
@@ -638,5 +692,9 @@ select:focus {
 
   .griglia-mesi {
     grid-template-columns: repeat(3, 1fr);
+  }
+
+  .piani-pro {
+    grid-template-columns: repeat(2, 1fr);
   }
 }

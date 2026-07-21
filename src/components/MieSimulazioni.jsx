@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../hooks/useAuth.js'
+import { useAbbonamento } from '../hooks/useAbbonamento.js'
 import { calcolaForfettario } from '../lib/calcolo.js'
 import { elencaSimulazioni, eliminaSimulazione, rinominaSimulazione } from '../lib/simulazioni.js'
 
@@ -33,6 +34,7 @@ function risultatoDi(sim) {
 // confrontarne 2-3 in una tabella comparativa.
 export default function MieSimulazioni({ onCarica, versione }) {
   const { user } = useAuth()
+  const { isPro } = useAbbonamento()
   const [simulazioni, setSimulazioni] = useState([])
   const [caricamento, setCaricamento] = useState(true)
   const [errore, setErrore] = useState(null)
@@ -42,7 +44,7 @@ export default function MieSimulazioni({ onCarica, versione }) {
   const [idOccupato, setIdOccupato] = useState(null)
 
   useEffect(() => {
-    if (!user) {
+    if (!user || !isPro) {
       setSimulazioni([])
       setSelezionate([])
       return
@@ -63,7 +65,7 @@ export default function MieSimulazioni({ onCarica, versione }) {
     return () => {
       attivo = false
     }
-  }, [user, versione])
+  }, [user, isPro, versione])
 
   const confrontate = useMemo(
     () => simulazioni.filter((s) => selezionate.includes(s.id)),
@@ -71,6 +73,18 @@ export default function MieSimulazioni({ onCarica, versione }) {
   )
 
   if (!user) return null
+
+  if (!isPro) {
+    return (
+      <section className="scheda" aria-labelledby="titolo-simulazioni">
+        <h2 id="titolo-simulazioni">Le mie simulazioni</h2>
+        <p className="upsell-pro">
+          Salvataggio e confronto delle simulazioni sono funzioni <strong>Pro</strong>.{' '}
+          <a href="#pro">Passa a Pro</a> per sbloccarle.
+        </p>
+      </section>
+    )
+  }
 
   function toggleSelezione(id) {
     setSelezionate((prima) => {
