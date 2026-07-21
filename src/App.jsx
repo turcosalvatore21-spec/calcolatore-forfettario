@@ -1,11 +1,13 @@
 import { useCallback, useMemo, useState } from 'react'
 import { GRUPPI_ATECO, CASSE, LIMITE_RICAVI, calcolaForfettario } from './lib/calcolo.js'
 import { useAuth } from './hooks/useAuth.js'
+import { useAbbonamento } from './hooks/useAbbonamento.js'
 import AuthModal from './components/AuthModal.jsx'
 import SalvaSimulazione from './components/SalvaSimulazione.jsx'
 import MieSimulazioni from './components/MieSimulazioni.jsx'
 import ProiezioneAnnuale from './components/ProiezioneAnnuale.jsx'
 import ScaricaPdf from './components/ScaricaPdf.jsx'
+import PaginaPro from './components/PaginaPro.jsx'
 import { esportaPdfCalcolo } from './lib/pdf.js'
 
 const euro = new Intl.NumberFormat('it-IT', {
@@ -33,6 +35,7 @@ function Riga({ label, value, evidenzia, nota }) {
 
 function BarraUtente({ onApriAccesso }) {
   const { user, loading, signOut } = useAuth()
+  const { isPro } = useAbbonamento()
 
   if (loading) return <div className="barra-utente" aria-hidden="true" />
 
@@ -40,8 +43,14 @@ function BarraUtente({ onApriAccesso }) {
     <div className="barra-utente">
       {user ? (
         <>
+          {!isPro && (
+            <a className="bottone bottone-contorno" href="#pro">
+              Passa a Pro
+            </a>
+          )}
           <span className="utente-email" title={user.email}>
             {user.email}
+            {isPro && <span className="badge-pro">PRO</span>}
           </span>
           <button type="button" className="bottone bottone-contorno" onClick={() => signOut()}>
             Esci
@@ -232,6 +241,8 @@ export default function App() {
         <MieSimulazioni onCarica={caricaSimulazione} versione={versioneSimulazioni} />
 
         <ProiezioneAnnuale dati={datiCorrenti} />
+
+        <PaginaPro onApriAccesso={() => setModaleAuthAperto(true)} />
 
         <section className="scheda testo-seo" aria-labelledby="titolo-info">
           <h2 id="titolo-info">Come funziona il calcolo delle tasse nel regime forfettario</h2>

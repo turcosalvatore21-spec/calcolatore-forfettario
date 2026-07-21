@@ -1,11 +1,14 @@
 import { useState } from 'react'
 import { useAuth } from '../hooks/useAuth.js'
+import { useAbbonamento } from '../hooks/useAbbonamento.js'
 import { salvaSimulazione } from '../lib/simulazioni.js'
 
 // Bottone "Salva simulazione" sotto i risultati: chiede un nome e salva gli
-// input correnti su Supabase. Se l'utente non è loggato apre la modale di accesso.
+// input correnti su Supabase. Se l'utente non è loggato apre la modale di
+// accesso; se è loggato ma non è Pro rimanda alla sezione di upgrade.
 export default function SalvaSimulazione({ dati, onApriAccesso, onSalvata }) {
   const { user } = useAuth()
+  const { isPro } = useAbbonamento()
   const [formAperto, setFormAperto] = useState(false)
   const [nome, setNome] = useState('')
   const [inCorso, setInCorso] = useState(false)
@@ -16,6 +19,10 @@ export default function SalvaSimulazione({ dati, onApriAccesso, onSalvata }) {
     setSalvata(false)
     if (!user) {
       onApriAccesso()
+      return
+    }
+    if (!isPro) {
+      window.location.hash = '#pro'
       return
     }
     setErrore(null)
@@ -89,6 +96,12 @@ export default function SalvaSimulazione({ dati, onApriAccesso, onSalvata }) {
           )}
           {!user && (
             <p className="auth-nota">Accedi per salvare le tue simulazioni e confrontarle.</p>
+          )}
+          {user && !isPro && (
+            <p className="upsell-pro">
+              Il salvataggio delle simulazioni è una funzione <strong>Pro</strong>.{' '}
+              <a href="#pro">Passa a Pro</a> per sbloccarla.
+            </p>
           )}
         </>
       )}

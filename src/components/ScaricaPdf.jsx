@@ -1,14 +1,25 @@
 import { useState } from 'react'
 import { useAuth } from '../hooks/useAuth.js'
+import { useAbbonamento } from '../hooks/useAbbonamento.js'
 
-// Bottone «Scarica PDF», visibile solo agli utenti loggati. Riceve una
-// funzione asincrona che genera e scarica il PDF nel browser (jsPDF).
+// Bottone «Scarica PDF», funzione Pro: visibile solo agli utenti loggati con
+// abbonamento attivo. Riceve una funzione asincrona che genera e scarica il
+// PDF nel browser (jsPDF).
 export default function ScaricaPdf({ onEsporta, disabilitato = false }) {
   const { user } = useAuth()
+  const { isPro } = useAbbonamento()
   const [inCorso, setInCorso] = useState(false)
   const [errore, setErrore] = useState(null)
 
   if (!user) return null
+
+  if (!isPro) {
+    return (
+      <p className="upsell-pro">
+        L'export in PDF è una funzione <strong>Pro</strong>. <a href="#pro">Passa a Pro</a> per sbloccarla.
+      </p>
+    )
+  }
 
   async function onClick() {
     setErrore(null)
