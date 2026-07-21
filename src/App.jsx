@@ -4,6 +4,9 @@ import { useAuth } from './hooks/useAuth.js'
 import AuthModal from './components/AuthModal.jsx'
 import SalvaSimulazione from './components/SalvaSimulazione.jsx'
 import MieSimulazioni from './components/MieSimulazioni.jsx'
+import ProiezioneAnnuale from './components/ProiezioneAnnuale.jsx'
+import ScaricaPdf from './components/ScaricaPdf.jsx'
+import { esportaPdfCalcolo } from './lib/pdf.js'
 
 const euro = new Intl.NumberFormat('it-IT', {
   style: 'currency',
@@ -218,9 +221,17 @@ export default function App() {
             onApriAccesso={() => setModaleAuthAperto(true)}
             onSalvata={() => setVersioneSimulazioni((v) => v + 1)}
           />
+
+          <ScaricaPdf
+            onEsporta={() =>
+              esportaPdfCalcolo({ dati: datiCorrenti, risultato, GRUPPI_ATECO, CASSE })
+            }
+          />
         </section>
 
         <MieSimulazioni onCarica={caricaSimulazione} versione={versioneSimulazioni} />
+
+        <ProiezioneAnnuale dati={datiCorrenti} />
 
         <section className="scheda testo-seo" aria-labelledby="titolo-info">
           <h2 id="titolo-info">Come funziona il calcolo delle tasse nel regime forfettario</h2>
