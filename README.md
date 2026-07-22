@@ -12,24 +12,32 @@ incolla il contenuto del file → Run), in ordine:
 
 ## Abbonamento Pro (Lemon Squeezy)
 
-### Store e variant (checkout, lato client)
+### Store, checkout e variant (lato client)
 
-`src/lib/lemonsqueezyConfig.js` legge store e variant ID da variabili
-d'ambiente **VITE_** (quindi vanno bene sia in `.env.local` che tra le
-Environment Variables di Vercel — sono valori pubblici, non segreti: compaiono
-comunque nell'URL di checkout):
+`src/lib/lemonsqueezyConfig.js` legge da variabili d'ambiente **VITE_**
+(quindi vanno bene sia in `.env.local` che tra le Environment Variables di
+Vercel — sono valori pubblici, non segreti: compaiono comunque nell'URL di
+checkout). Attenzione: per ogni piano ci sono **due identificativi diversi**.
 
 - `VITE_LEMONSQUEEZY_STORE` — sottodominio dello store (default: `strataitalia`)
-- `VITE_LEMONSQUEEZY_VARIANT_MONTHLY` — variant ID piano mensile (default: `1932382`)
-- `VITE_LEMONSQUEEZY_VARIANT_ANNUAL` — variant ID piano annuale (default: `1932369`)
+- `VITE_LEMONSQUEEZY_CHECKOUT_MONTHLY` — **UUID** di checkout mensile (default: `1e79cbcc-…`)
+- `VITE_LEMONSQUEEZY_CHECKOUT_ANNUAL` — **UUID** di checkout annuale (default: `5f2cdc12-…`)
+- `VITE_LEMONSQUEEZY_VARIANT_MONTHLY` — variant id **numerico** mensile (default: `1932382`)
+- `VITE_LEMONSQUEEZY_VARIANT_ANNUAL` — variant id **numerico** annuale (default: `1932369`)
 
-Se non impostate vengono usati i valori di default (lo store "live"), quindi
+**UUID vs numero — è la distinzione che conta:**
+- L'**UUID** è l'unico valore valido nell'URL di pagamento
+  (`/checkout/buy/<uuid>`). Si copia da **Lemon Squeezy → Products →
+  Share**. Mettere il numero qui produce un **404** (era il bug originale).
+- Il **numero** (variant id API) serve **solo al webhook** per capire quale
+  piano è stato acquistato dall'evento ricevuto. Non va mai nell'URL.
+
+Se non impostate vengono usati i valori di default (store "live"), quindi
 l'app funziona anche senza configurarle. Impostale per passare allo store di
-test durante lo sviluppo (`VITE_LEMONSQUEEZY_STORE=<store-test>` con i variant
-ID di quello store). Se un piano risulta senza variant ID configurato, il
-bottone di checkout mostra un avviso invece di aprire un link rotto.
+test durante lo sviluppo. Se un piano risulta senza UUID di checkout
+configurato, il bottone mostra un avviso invece di aprire un link rotto.
 
-**Importante:** se cambi questi variant ID (es. passando allo store live),
+**Importante:** se cambi i variant id numerici (es. passando allo store live),
 aggiorna anche le stesse variabili su Vercel per la funzione webhook (vedi
 sotto) — il webhook usa gli stessi nomi per dedurre il piano dall'evento.
 
