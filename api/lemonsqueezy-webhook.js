@@ -1,8 +1,16 @@
 import crypto from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
 
-// Il webhook deve leggere il body raw per verificare la firma HMAC:
-// Vercel non deve parsarlo prima che arrivi qui.
+// Il webhook deve leggere il body RAW (non parsato) per verificare la firma
+// HMAC: la firma è calcolata da Lemon Squeezy sui byte esatti inviati, quindi
+// qualsiasi ri-serializzazione del JSON (che cambia spazi/ordine chiavi) fa
+// fallire il confronto → 401.
+//
+// Su @vercel/node (questa NON è una route Next.js: il progetto è Vite, le
+// funzioni in /api girano su @vercel/node) questa export disattiva il parsing
+// automatico del body, così lo stream resta leggibile. leggiBodyRaw legge
+// comunque prima lo stream e usa req.body solo come fallback, per essere
+// robusto a prescindere dal runtime.
 export const config = {
   api: {
     bodyParser: false
@@ -37,16 +45,20 @@ function pianoDaVariantId(variantId) {
 }
 
 async function leggiBodyRaw(req) {
-  // Alcuni runtime Vercel espongono già il body come Buffer o stringa grezza:
-  // in quei casi va usato così com'è, perché la firma HMAC è calcolata sui
-  // byte esatti ricevuti. Altrimenti si legge lo stream (con bodyParser off).
-  if (Buffer.isBuffer(req.body)) return req.body
-  if (typeof req.body === 'string') return Buffer.from(req.body, 'utf8')
+  // Leggiamo PRIMA lo stream grezzo: con bodyParser off il body non è ancora
+  // stato consumato e sono i byte esatti su cui è calcolata la firma. NON
+  // accediamo a req.body prima dello stream, perché su alcuni runtime la sola
+  // lettura di req.body innesca il parsing e "svuota" lo stream.
   const pezzi = []
   for await (const pezzo of req) {
     pezzi.push(typeof pezzo === 'string' ? Buffer.from(pezzo) : pezzo)
   }
-  return Buffer.concat(pezzi)
+  if (pezzi.length > 0) return Buffer.concat(pezzi)
+  // Fallback: se lo stream era già stato consumato, proviamo con req.body
+  // (solo se è ancora grezzo: Buffer o stringa).
+  if (Buffer.isBuffer(req.body)) return req.body
+  if (typeof req.body === 'string') return Buffer.from(req.body, 'utf8')
+  return Buffer.alloc(0)
 }
 
 /** Verifica la firma X-Signature con confronto a tempo costante. */
@@ -75,7 +87,10 @@ export default async function handler(req, res) {
 
   const bodyRaw = await leggiBodyRaw(req)
   const firma = req.headers['x-signature']
-  const secret = process.env.LEMONSQUEEZY_WEBHOOK_SECRET
+  // .trim() difende dallo spazio o "a capo" finale che spesso finisce nella
+  // env var quando la si incolla su Vercel: è una causa tipica di 401 anche
+  // quando il secret sembra identico a occhio.
+  const secret = process.env.LEMONSQUEEZY_WEBHOOK_SECRET?.trim()
 
   if (!verificaFirma(bodyRaw, firma, secret)) {
     res.status(401).send('Firma non valida')
