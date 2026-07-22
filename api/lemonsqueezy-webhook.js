@@ -9,7 +9,15 @@ export const config = {
   }
 }
 
-const EVENTI_ATTIVAZIONE = ['subscription_created', 'subscription_updated', 'subscription_resumed']
+// subscription_payment_success è incluso perché scatta ad ogni pagamento
+// riuscito (anche il primo): garantisce l'attivazione Pro anche se per qualche
+// motivo l'evento subscription_created non arrivasse o venisse perso.
+const EVENTI_ATTIVAZIONE = [
+  'subscription_created',
+  'subscription_updated',
+  'subscription_resumed',
+  'subscription_payment_success'
+]
 const EVENTI_DISATTIVAZIONE = ['subscription_cancelled', 'subscription_expired']
 
 // Stessi nomi di env var VITE_LEMONSQUEEZY_VARIANT_* usati dal client
@@ -29,8 +37,15 @@ function pianoDaVariantId(variantId) {
 }
 
 async function leggiBodyRaw(req) {
+  // Alcuni runtime Vercel espongono già il body come Buffer o stringa grezza:
+  // in quei casi va usato così com'è, perché la firma HMAC è calcolata sui
+  // byte esatti ricevuti. Altrimenti si legge lo stream (con bodyParser off).
+  if (Buffer.isBuffer(req.body)) return req.body
+  if (typeof req.body === 'string') return Buffer.from(req.body, 'utf8')
   const pezzi = []
-  for await (const pezzo of req) pezzi.push(pezzo)
+  for await (const pezzo of req) {
+    pezzi.push(typeof pezzo === 'string' ? Buffer.from(pezzo) : pezzo)
+  }
   return Buffer.concat(pezzi)
 }
 
@@ -90,18 +105,30 @@ export default async function handler(req, res) {
 
   try {
     if (EVENTI_ATTIVAZIONE.includes(nomeEvento)) {
-      const { error } = await supabaseAdmin.from('abbonamenti').upsert(
-        {
-          user_id: userId,
-          subscription_status: 'pro',
-          subscription_plan: pianoDaVariantId(attributi.variant_id),
-          subscription_renews_at: attributi.renews_at ?? null,
-          lemonsqueezy_subscription_id: String(evento.data?.id ?? ''),
-          lemonsqueezy_customer_id: String(attributi.customer_id ?? ''),
-          updated_at: new Date().toISOString()
-        },
-        { onConflict: 'user_id' }
-      )
+      // Gli eventi subscription_* hanno data = subscription (id sottoscrizione,
+      // variant_id, renews_at). subscription_payment_success ha invece data =
+      // fattura: l'id della sottoscrizione è in attributes.subscription_id e non
+      // contiene il variant_id. Estraiamo quindi i campi in modo condizionale.
+      const isFattura = nomeEvento === 'subscription_payment_success'
+      const subscriptionId = isFattura ? attributi.subscription_id : evento?.data?.id
+      const piano = attributi.variant_id != null ? pianoDaVariantId(attributi.variant_id) : null
+
+      // Includiamo solo i campi di cui abbiamo davvero un valore: le colonne
+      // omesse restano invariate nell'upsert (così un evento senza variant_id
+      // non azzera il piano già salvato).
+      const dati = {
+        user_id: userId,
+        subscription_status: 'pro',
+        updated_at: new Date().toISOString()
+      }
+      if (piano) dati.subscription_plan = piano
+      if (attributi.renews_at) dati.subscription_renews_at = attributi.renews_at
+      if (subscriptionId != null) dati.lemonsqueezy_subscription_id = String(subscriptionId)
+      if (attributi.customer_id != null) dati.lemonsqueezy_customer_id = String(attributi.customer_id)
+
+      const { error } = await supabaseAdmin
+        .from('abbonamenti')
+        .upsert(dati, { onConflict: 'user_id' })
       if (error) throw error
     } else if (EVENTI_DISATTIVAZIONE.includes(nomeEvento)) {
       const { error } = await supabaseAdmin
