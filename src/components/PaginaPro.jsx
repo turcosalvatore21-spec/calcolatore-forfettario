@@ -3,6 +3,7 @@ import { useAuth } from '../hooks/useAuth.js'
 import { useAbbonamento } from '../hooks/useAbbonamento.js'
 import { apriCheckout } from '../lib/lemonjs.js'
 import { PIANI, pianoConfigurato, urlCheckout } from '../lib/lemonsqueezyConfig.js'
+import { urlPortaleCliente } from '../lib/portale.js'
 
 const dataBreve = new Intl.DateTimeFormat('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })
 
@@ -43,6 +44,20 @@ export default function PaginaPro({ onApriAccesso }) {
   const { isPro, piano, rinnovaIl, loading, ricarica } = useAbbonamento()
   const [pianoInCorso, setPianoInCorso] = useState(null)
   const [errore, setErrore] = useState(null)
+  const [portaleInCorso, setPortaleInCorso] = useState(false)
+  const [errorePortale, setErrorePortale] = useState(null)
+
+  async function onGestisciAbbonamento() {
+    setErrorePortale(null)
+    setPortaleInCorso(true)
+    try {
+      const url = await urlPortaleCliente()
+      window.location.href = url
+    } catch (err) {
+      setErrorePortale(err.message || 'Impossibile aprire la gestione dell’abbonamento.')
+      setPortaleInCorso(false)
+    }
+  }
 
   async function onClickPassaAPro(pianoScelto) {
     if (!user) {
@@ -73,10 +88,31 @@ export default function PaginaPro({ onApriAccesso }) {
       {loading ? (
         <p className="auth-nota">Verifica dell'abbonamento…</p>
       ) : isPro ? (
-        <p className="auth-conferma" role="status">
-          Sei già abbonato al piano Pro ({NOME_PIANO[piano] ?? piano}).
-          {rinnovaIl && ` Si rinnova il ${dataBreve.format(new Date(rinnovaIl))}.`}
-        </p>
+        <>
+          <p className="auth-conferma" role="status">
+            Sei già abbonato al piano Pro ({NOME_PIANO[piano] ?? piano}).
+            {rinnovaIl && ` Si rinnova il ${dataBreve.format(new Date(rinnovaIl))}.`}
+          </p>
+          <div className="gestisci-abbonamento">
+            <button
+              type="button"
+              className="bottone bottone-contorno"
+              onClick={onGestisciAbbonamento}
+              disabled={portaleInCorso}
+            >
+              {portaleInCorso ? 'Apertura…' : 'Gestisci abbonamento'}
+            </button>
+            <p className="auth-nota">
+              Aggiorna il metodo di pagamento, scarica le fatture o disdici in autonomia dal portale
+              cliente Lemon Squeezy.
+            </p>
+            {errorePortale && (
+              <p className="avviso" role="alert">
+                {errorePortale}
+              </p>
+            )}
+          </div>
+        </>
       ) : (
         <>
           <p className="auth-nota">

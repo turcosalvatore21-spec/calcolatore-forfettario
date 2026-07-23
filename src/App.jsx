@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { GRUPPI_ATECO, CASSE, LIMITE_RICAVI, calcolaForfettario } from './lib/calcolo.js'
 import { useAuth } from './hooks/useAuth.js'
 import { useAbbonamento } from './hooks/useAbbonamento.js'
@@ -8,6 +8,7 @@ import MieSimulazioni from './components/MieSimulazioni.jsx'
 import ProiezioneAnnuale from './components/ProiezioneAnnuale.jsx'
 import ScaricaPdf from './components/ScaricaPdf.jsx'
 import PaginaPro from './components/PaginaPro.jsx'
+import { Privacy, Termini } from './components/PagineLegali.jsx'
 import { esportaPdfCalcolo } from './lib/pdf.js'
 
 const euro = new Intl.NumberFormat('it-IT', {
@@ -65,6 +66,19 @@ function BarraUtente({ onApriAccesso }) {
   )
 }
 
+function PiePagina() {
+  return (
+    <footer className="pie-pagina">
+      <p>Calcolatore Forfettario — funziona anche offline, installalo come app.</p>
+      <nav className="footer-link" aria-label="Link legali">
+        <a href="#privacy">Privacy Policy</a>
+        <span aria-hidden="true">·</span>
+        <a href="#termini">Termini di Servizio</a>
+      </nav>
+    </footer>
+  )
+}
+
 export default function App() {
   const [ricavi, setRicavi] = useState('30000')
   const [gruppoId, setGruppoId] = useState('professionisti')
@@ -73,6 +87,29 @@ export default function App() {
   const [riduzione35, setRiduzione35] = useState(false)
   const [modaleAuthAperto, setModaleAuthAperto] = useState(false)
   const [versioneSimulazioni, setVersioneSimulazioni] = useState(0)
+
+  // Vista corrente in base all'hash: #privacy / #termini mostrano le pagine
+  // legali, tutto il resto (incluso #pro, che resta un'ancora) mostra il
+  // calcolatore. Niente router: basta ascoltare hashchange.
+  const [hash, setHash] = useState(() => (typeof window !== 'undefined' ? window.location.hash : ''))
+
+  useEffect(() => {
+    const onHash = () => setHash(window.location.hash)
+    window.addEventListener('hashchange', onHash)
+    return () => window.removeEventListener('hashchange', onHash)
+  }, [])
+
+  const vista = hash === '#privacy' ? 'privacy' : hash === '#termini' ? 'termini' : 'home'
+
+  useEffect(() => {
+    if (vista !== 'home') window.scrollTo(0, 0)
+  }, [vista])
+
+  const vaiHome = useCallback(() => {
+    window.history.pushState(null, '', window.location.pathname + window.location.search)
+    setHash('')
+    window.scrollTo(0, 0)
+  }, [])
 
   const ricaviNum = Number(ricavi) || 0
   const mostraRiduzione = cassaId !== 'gestione-separata'
@@ -111,6 +148,19 @@ export default function App() {
     setRiduzione35(Boolean(dati.riduzione35))
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [])
+
+  if (vista === 'privacy' || vista === 'termini') {
+    return (
+      <div className="app">
+        <header className="intestazione">
+          <BarraUtente onApriAccesso={() => setModaleAuthAperto(true)} />
+        </header>
+        {vista === 'privacy' ? <Privacy onIndietro={vaiHome} /> : <Termini onIndietro={vaiHome} />}
+        <PiePagina />
+        <AuthModal aperto={modaleAuthAperto} onChiudi={() => setModaleAuthAperto(false)} />
+      </div>
+    )
+  }
 
   return (
     <div className="app">
@@ -275,9 +325,7 @@ export default function App() {
         </section>
       </main>
 
-      <footer className="pie-pagina">
-        <p>Calcolatore Forfettario — funziona anche offline, installalo come app.</p>
-      </footer>
+      <PiePagina />
 
       <AuthModal aperto={modaleAuthAperto} onChiudi={() => setModaleAuthAperto(false)} />
     </div>
