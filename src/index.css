@@ -195,6 +195,64 @@ select:focus {
   font-size: 0.8rem;
 }
 
+.footer-link {
+  margin-top: 0.5rem;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.footer-link a {
+  color: var(--testo-secondario);
+  text-decoration: underline;
+}
+
+.footer-link a:hover {
+  color: var(--blu);
+}
+
+.testo-legale h2 {
+  font-size: 1.05rem;
+  margin: 1.5rem 0 0.4rem;
+}
+
+.testo-legale p,
+.testo-legale li {
+  font-size: 0.95rem;
+}
+
+.testo-legale ul {
+  padding-left: 1.2rem;
+}
+
+.testo-legale li {
+  margin-bottom: 0.35rem;
+}
+
+.legale-aggiornamento {
+  color: var(--testo-secondario);
+  font-size: 0.85rem;
+  margin-top: -0.25rem;
+}
+
+.link-indietro {
+  background: none;
+  border: none;
+  color: var(--blu);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 0.75rem;
+}
+
+.link-indietro:hover {
+  text-decoration: underline;
+}
+
 /* Autenticazione */
 
 .barra-utente {
@@ -644,6 +702,18 @@ select:focus {
 
 .scheda-pro {
   border-color: var(--blu);
+}
+
+.gestisci-abbonamento {
+  margin-top: 1rem;
+}
+
+.gestisci-abbonamento .bottone {
+  width: 100%;
+}
+
+.gestisci-abbonamento .auth-nota {
+  margin-top: 0.5rem;
 }
 
 .piani-pro {

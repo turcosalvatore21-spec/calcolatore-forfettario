@@ -67,6 +67,26 @@ La tabella `abbonamenti` ha RLS in sola lettura per l'utente proprietario:
 solo il webhook (con la service role key) può scrivere lo stato del piano,
 così un utente non può auto-assegnarsi il piano Pro dal client.
 
+### Portale cliente (gestione abbonamento)
+
+La funzione `api/customer-portal.js` restituisce un URL fresco del portale
+cliente Lemon Squeezy (aggiorna pagamento, scarica fatture, disdici). Gli URL
+del portale sono firmati e scadono, quindi vengono generati al momento via
+API. Richiede una env var aggiuntiva su Vercel:
+
+- `LEMONSQUEEZY_API_KEY` — API key Lemon Squeezy (Dashboard → Settings → API)
+
+Riusa inoltre `SUPABASE_URL`/`VITE_SUPABASE_URL` e `SUPABASE_ANON_KEY`/
+`VITE_SUPABASE_ANON_KEY`. L'utente è identificato dal suo token Supabase e può
+ottenere **solo** il portale del proprio abbonamento (RLS). Se
+`LEMONSQUEEZY_API_KEY` non è impostata, il bottone «Gestisci abbonamento»
+mostra un avviso invece di rompersi.
+
+### Pagine legali
+
+Privacy Policy e Termini di Servizio sono viste dell'app raggiungibili dal
+footer (hash `#privacy` / `#termini`), in `src/components/PagineLegali.jsx`.
+
 ### Se l'app mostra una pagina bianca
 
 `src/components/ErrorBoundary.jsx` avvolge l'intera app: qualunque errore

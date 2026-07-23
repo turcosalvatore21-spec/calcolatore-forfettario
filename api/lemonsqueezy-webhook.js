@@ -93,17 +93,7 @@ export default async function handler(req, res) {
   const secret = process.env.LEMONSQUEEZY_WEBHOOK_SECRET?.trim()
 
   if (!verificaFirma(bodyRaw, firma, secret)) {
-    // DIAGNOSTICA TEMPORANEA: il messaggio 401 riporta perché la firma non
-    // torna, così è leggibile dalla schermata "Recent deliveries" di Lemon
-    // Squeezy senza dover aprire i log di Vercel. Da rimuovere una volta a 200.
-    //  - body=0B            -> il body raw non arriva (runtime che pre-parsa)
-    //  - secret=ASSENTE     -> env var LEMONSQUEEZY_WEBHOOK_SECRET non impostata
-    //  - secret=NNchar      -> lunghezza del secret dopo trim (atteso 40)
-    const diagnostica =
-      `body=${bodyRaw.length}B ` +
-      `secret=${secret ? secret.length + 'char' : 'ASSENTE'} ` +
-      `header=${firma ? 'presente' : 'assente'}`
-    res.status(401).send(`Firma non valida [${diagnostica}]`)
+    res.status(401).send('Firma non valida')
     return
   }
 
