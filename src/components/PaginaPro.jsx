@@ -41,7 +41,7 @@ function BottonePiano({ id, config, inCorso, disabilitato, onClick }) {
 
 export default function PaginaPro({ onApriAccesso }) {
   const { user } = useAuth()
-  const { isPro, piano, rinnovaIl, loading, ricarica } = useAbbonamento()
+  const { isPro, piano, rinnovaIl, inScadenza, scadeIl, loading, ricarica } = useAbbonamento()
   const [pianoInCorso, setPianoInCorso] = useState(null)
   const [errore, setErrore] = useState(null)
   const [portaleInCorso, setPortaleInCorso] = useState(false)
@@ -89,10 +89,18 @@ export default function PaginaPro({ onApriAccesso }) {
         <p className="auth-nota">Verifica dell'abbonamento…</p>
       ) : isPro ? (
         <>
-          <p className="auth-conferma" role="status">
-            Sei già abbonato al piano Pro ({NOME_PIANO[piano] ?? piano}).
-            {rinnovaIl && ` Si rinnova il ${dataBreve.format(new Date(rinnovaIl))}.`}
-          </p>
+          {inScadenza ? (
+            <p className="auth-conferma auth-conferma-scadenza" role="status">
+              Abbonamento disdetto — Pro {NOME_PIANO[piano] ? `(${NOME_PIANO[piano]}) ` : ''}attivo
+              {scadeIl ? ` fino al ${dataBreve.format(new Date(scadeIl))}` : ' fino a fine periodo'}.
+              Dopo questa data tornerai al piano gratuito; puoi riattivarlo quando vuoi.
+            </p>
+          ) : (
+            <p className="auth-conferma" role="status">
+              Sei già abbonato al piano Pro ({NOME_PIANO[piano] ?? piano}).
+              {rinnovaIl && ` Si rinnova il ${dataBreve.format(new Date(rinnovaIl))}.`}
+            </p>
+          )}
           <div className="gestisci-abbonamento">
             <button
               type="button"

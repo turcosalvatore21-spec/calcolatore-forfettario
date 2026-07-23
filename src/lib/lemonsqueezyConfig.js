@@ -10,24 +10,35 @@
 //  2. variantId: il variant id NUMERICO dell'API, usato SOLO dal webhook per
 //     dedurre il piano dall'evento ricevuto (vedi api/lemonsqueezy-webhook.js).
 //
-// Tutti leggibili da variabili d'ambiente VITE_LEMONSQUEEZY_* per passare
-// dallo store di test a quello live senza toccare il codice. Se non impostate
-// si usano i valori di default, così l'app resta funzionante.
+// Tutti leggibili da variabili d'ambiente VITE_LEMONSQUEEZY_*, così il
+// passaggio test → live si fa SOLO dalla configurazione su Vercel, senza
+// toccare il codice.
+//
+// I valori di default qui sotto valgono SOLO in sviluppo (vite dev). In
+// produzione (build) NON vengono usati: se una variabile manca, il valore è
+// vuoto e il piano risulta "non configurato" (il bottone mostra un avviso
+// invece di aprire un checkout con id sbagliati). Questo evita di usare per
+// errore gli id di test in produzione.
 //
 // Nota: questo modulo NON deve essere importato da api/lemonsqueezy-webhook.js
 // (funzione Node su Vercel): import.meta.env è un costrutto solo-Vite e non
 // esiste in quel runtime.
-const STORE_DEFAULT = 'strataitalia'
-const CHECKOUT_MENSILE_DEFAULT = '1e79cbcc-5be2-4823-85d9-3a88a7b59b9e'
-const CHECKOUT_ANNUALE_DEFAULT = '5f2cdc12-54f3-4a44-9c62-ee732a81d08e'
-const VARIANT_MENSILE_DEFAULT = '1932382'
-const VARIANT_ANNUALE_DEFAULT = '1932369'
+const DEV = import.meta.env.DEV
+const DEFAULT_SVILUPPO = {
+  store: 'strataitalia',
+  checkoutMensile: '1e79cbcc-5be2-4823-85d9-3a88a7b59b9e',
+  checkoutAnnuale: '5f2cdc12-54f3-4a44-9c62-ee732a81d08e',
+  variantMensile: '1932382',
+  variantAnnuale: '1932369'
+}
+// Ritorna il valore della env var; in sua assenza usa il default SOLO in dev.
+const daEnv = (valore, chiave) => valore || (DEV ? DEFAULT_SVILUPPO[chiave] : '')
 
-export const STORE_SUBDOMAIN = import.meta.env.VITE_LEMONSQUEEZY_STORE || STORE_DEFAULT
-export const CHECKOUT_MENSILE = import.meta.env.VITE_LEMONSQUEEZY_CHECKOUT_MONTHLY || CHECKOUT_MENSILE_DEFAULT
-export const CHECKOUT_ANNUALE = import.meta.env.VITE_LEMONSQUEEZY_CHECKOUT_ANNUAL || CHECKOUT_ANNUALE_DEFAULT
-export const VARIANT_MENSILE = import.meta.env.VITE_LEMONSQUEEZY_VARIANT_MONTHLY || VARIANT_MENSILE_DEFAULT
-export const VARIANT_ANNUALE = import.meta.env.VITE_LEMONSQUEEZY_VARIANT_ANNUAL || VARIANT_ANNUALE_DEFAULT
+export const STORE_SUBDOMAIN = daEnv(import.meta.env.VITE_LEMONSQUEEZY_STORE, 'store')
+export const CHECKOUT_MENSILE = daEnv(import.meta.env.VITE_LEMONSQUEEZY_CHECKOUT_MONTHLY, 'checkoutMensile')
+export const CHECKOUT_ANNUALE = daEnv(import.meta.env.VITE_LEMONSQUEEZY_CHECKOUT_ANNUAL, 'checkoutAnnuale')
+export const VARIANT_MENSILE = daEnv(import.meta.env.VITE_LEMONSQUEEZY_VARIANT_MONTHLY, 'variantMensile')
+export const VARIANT_ANNUALE = daEnv(import.meta.env.VITE_LEMONSQUEEZY_VARIANT_ANNUAL, 'variantAnnuale')
 
 export const PIANI = {
   monthly: {
