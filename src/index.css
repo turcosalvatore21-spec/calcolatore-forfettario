@@ -410,6 +410,10 @@ select:focus {
   margin: 0 0 0.75rem;
 }
 
+.auth-conferma-scadenza {
+  color: #b45309;
+}
+
 /* Salvataggio e lista simulazioni */
 
 .salva-simulazione {

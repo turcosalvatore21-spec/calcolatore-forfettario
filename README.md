@@ -9,6 +9,7 @@ incolla il contenuto del file → Run), in ordine:
 1. `001_simulazioni.sql` — tabella `simulazioni` (salvataggio simulazioni)
 2. `002_proiezioni.sql` — tabella `proiezioni` (proiezione annuale mese per mese)
 3. `003_abbonamenti.sql` — tabella `abbonamenti` (stato piano Pro, aggiornata dal webhook Lemon Squeezy)
+4. `004_disdetta.sql` — colonne per la disdetta con periodo di grazia (`subscription_cancel_at_period_end`, `subscription_ends_at`)
 
 ## Abbonamento Pro (Lemon Squeezy)
 
@@ -19,11 +20,11 @@ incolla il contenuto del file → Run), in ordine:
 Vercel — sono valori pubblici, non segreti: compaiono comunque nell'URL di
 checkout). Attenzione: per ogni piano ci sono **due identificativi diversi**.
 
-- `VITE_LEMONSQUEEZY_STORE` — sottodominio dello store (default: `strataitalia`)
-- `VITE_LEMONSQUEEZY_CHECKOUT_MONTHLY` — **UUID** di checkout mensile (default: `1e79cbcc-…`)
-- `VITE_LEMONSQUEEZY_CHECKOUT_ANNUAL` — **UUID** di checkout annuale (default: `5f2cdc12-…`)
-- `VITE_LEMONSQUEEZY_VARIANT_MONTHLY` — variant id **numerico** mensile (default: `1932382`)
-- `VITE_LEMONSQUEEZY_VARIANT_ANNUAL` — variant id **numerico** annuale (default: `1932369`)
+- `VITE_LEMONSQUEEZY_STORE` — sottodominio dello store
+- `VITE_LEMONSQUEEZY_CHECKOUT_MONTHLY` — **UUID** di checkout mensile
+- `VITE_LEMONSQUEEZY_CHECKOUT_ANNUAL` — **UUID** di checkout annuale
+- `VITE_LEMONSQUEEZY_VARIANT_MONTHLY` — variant id **numerico** mensile
+- `VITE_LEMONSQUEEZY_VARIANT_ANNUAL` — variant id **numerico** annuale
 
 **UUID vs numero — è la distinzione che conta:**
 - L'**UUID** è l'unico valore valido nell'URL di pagamento
@@ -32,14 +33,16 @@ checkout). Attenzione: per ogni piano ci sono **due identificativi diversi**.
 - Il **numero** (variant id API) serve **solo al webhook** per capire quale
   piano è stato acquistato dall'evento ricevuto. Non va mai nell'URL.
 
-Se non impostate vengono usati i valori di default (store "live"), quindi
-l'app funziona anche senza configurarle. Impostale per passare allo store di
-test durante lo sviluppo. Se un piano risulta senza UUID di checkout
-configurato, il bottone mostra un avviso invece di aprire un link rotto.
+**Default solo in sviluppo:** i valori di default (store/checkout/variant di
+test) sono usati **solo** in `vite dev`. In **produzione** (build su Vercel)
+queste variabili **devono** essere impostate: se mancano, il piano risulta
+non configurato e il bottone di checkout mostra un avviso invece di usare per
+errore gli id di test. È così che test e live si distinguono **solo dalla
+configurazione su Vercel**, senza toccare il codice.
 
-**Importante:** se cambi i variant id numerici (es. passando allo store live),
-aggiorna anche le stesse variabili su Vercel per la funzione webhook (vedi
-sotto) — il webhook usa gli stessi nomi per dedurre il piano dall'evento.
+**Importante:** i variant id numerici vanno impostati con gli stessi nomi
+anche per la funzione webhook (gira su Node, li legge da `process.env`) — vedi
+sotto.
 
 ### Webhook (lato server)
 
@@ -81,6 +84,47 @@ Riusa inoltre `SUPABASE_URL`/`VITE_SUPABASE_URL` e `SUPABASE_ANON_KEY`/
 ottenere **solo** il portale del proprio abbonamento (RLS). Se
 `LEMONSQUEEZY_API_KEY` non è impostata, il bottone «Gestisci abbonamento»
 mostra un avviso invece di rompersi.
+
+### Disdetta con periodo di grazia
+
+Chi disdice mantiene l'accesso Pro **fino alla fine del periodo già pagato**,
+poi decade automaticamente:
+
+- Alla disdetta il webhook riceve `subscription_cancelled` (o
+  `subscription_updated` con `status: cancelled`) e imposta
+  `subscription_cancel_at_period_end = true` e `subscription_ends_at` alla
+  data di fine periodo, mantenendo `subscription_status = 'pro'`.
+- Alla scadenza effettiva arriva `subscription_expired` → `subscription_status
+  = 'free'`. Come rete di sicurezza, anche il client considera scaduto l'accesso
+  se `subscription_ends_at` è passata, senza aspettare il webhook.
+- Le **simulazioni salvate non vengono mai cancellate** al ritorno a free:
+  restano nell'account, semplicemente non accessibili finché non si riattiva il
+  Pro.
+- Nell'area utente lo stato è mostrato come «Abbonamento disdetto — Pro attivo
+  fino al [data]».
+
+### Passare alla modalità Live su Lemon Squeezy
+
+Il codice non contiene nulla di specifico per test/live: la differenza è
+**solo** nelle Environment Variables su Vercel (poi **Redeploy**). Per andare
+in live, impostare su Vercel (ambiente **Production**), con i valori dello
+store **Live**:
+
+| Variabile | Dove si trova su Lemon Squeezy | Note |
+|---|---|---|
+| `VITE_LEMONSQUEEZY_STORE` | sottodominio dello store | pubblica |
+| `VITE_LEMONSQUEEZY_CHECKOUT_MONTHLY` | Products → prodotto mensile → Share (UUID) | pubblica |
+| `VITE_LEMONSQUEEZY_CHECKOUT_ANNUAL` | Products → prodotto annuale → Share (UUID) | pubblica |
+| `VITE_LEMONSQUEEZY_VARIANT_MONTHLY` | variant id numerico mensile (API/URL Share `?enabled=`) | pubblica |
+| `VITE_LEMONSQUEEZY_VARIANT_ANNUAL` | variant id numerico annuale | pubblica |
+| `LEMONSQUEEZY_WEBHOOK_SECRET` | Settings → Webhooks (webhook **Live**) | **segreta** |
+| `LEMONSQUEEZY_API_KEY` | Settings → API | **segreta** |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project Settings → API | **segreta** |
+| `SUPABASE_URL` (o `VITE_SUPABASE_URL`) | Supabase → Project Settings → API | |
+
+In Live serve anche **creare un webhook Live** (Settings → Webhooks in modalità
+Live) verso `/api/lemonsqueezy-webhook` con gli stessi eventi, e usare il suo
+signing secret in `LEMONSQUEEZY_WEBHOOK_SECRET`.
 
 ### Pagine legali
 

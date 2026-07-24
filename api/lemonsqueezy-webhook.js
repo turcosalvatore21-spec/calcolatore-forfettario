@@ -17,24 +17,31 @@ export const config = {
   }
 }
 
-// subscription_payment_success è incluso perché scatta ad ogni pagamento
-// riuscito (anche il primo): garantisce l'attivazione Pro anche se per qualche
-// motivo l'evento subscription_created non arrivasse o venisse perso.
-const EVENTI_ATTIVAZIONE = [
+// Eventi che portano un oggetto "subscription" nel payload (data =
+// subscription): lo stato reale si legge da attributes.status, così una
+// disdetta (status 'cancelled') mantiene il Pro fino a fine periodo, mentre
+// solo la scadenza effettiva (status 'expired') riporta l'utente a 'free'.
+const EVENTI_SOTTOSCRIZIONE = [
   'subscription_created',
   'subscription_updated',
   'subscription_resumed',
-  'subscription_payment_success'
+  'subscription_cancelled',
+  'subscription_expired'
 ]
-const EVENTI_DISATTIVAZIONE = ['subscription_cancelled', 'subscription_expired']
+// subscription_payment_success ha invece data = fattura (payload diverso) e
+// significa "pagamento riuscito" → abbonamento attivo.
 
 // Stessi nomi di env var VITE_LEMONSQUEEZY_VARIANT_* usati dal client
 // (src/lib/lemonsqueezyConfig.js), letti però da process.env: questo file
 // gira su Node (funzione serverless Vercel), non su Vite, quindi NON deve
 // importare quel modulo né usare import.meta.env (non esiste in questo
 // runtime e romperebbe il webhook).
-const VARIANT_MENSILE = process.env.VITE_LEMONSQUEEZY_VARIANT_MONTHLY || '1932382'
-const VARIANT_ANNUALE = process.env.VITE_LEMONSQUEEZY_VARIANT_ANNUAL || '1932369'
+// I default valgono SOLO fuori produzione (sviluppo/test): in produzione i
+// variant id devono arrivare dalle env var, così test e live si distinguono
+// solo dalla configurazione su Vercel.
+const DEV = process.env.NODE_ENV !== 'production'
+const VARIANT_MENSILE = process.env.VITE_LEMONSQUEEZY_VARIANT_MONTHLY || (DEV ? '1932382' : '')
+const VARIANT_ANNUALE = process.env.VITE_LEMONSQUEEZY_VARIANT_ANNUAL || (DEV ? '1932369' : '')
 
 /** Deduce il piano ('monthly' | 'annual') dal variant_id ricevuto dal webhook. */
 function pianoDaVariantId(variantId) {
@@ -119,38 +126,67 @@ export default async function handler(req, res) {
   const supabaseAdmin = client()
 
   try {
-    if (EVENTI_ATTIVAZIONE.includes(nomeEvento)) {
-      // Gli eventi subscription_* hanno data = subscription (id sottoscrizione,
-      // variant_id, renews_at). subscription_payment_success ha invece data =
-      // fattura: l'id della sottoscrizione è in attributes.subscription_id e non
-      // contiene il variant_id. Estraiamo quindi i campi in modo condizionale.
-      const isFattura = nomeEvento === 'subscription_payment_success'
-      const subscriptionId = isFattura ? attributi.subscription_id : evento?.data?.id
-      const piano = attributi.variant_id != null ? pianoDaVariantId(attributi.variant_id) : null
-
-      // Includiamo solo i campi di cui abbiamo davvero un valore: le colonne
-      // omesse restano invariate nell'upsert (così un evento senza variant_id
-      // non azzera il piano già salvato).
+    if (nomeEvento === 'subscription_payment_success') {
+      // Pagamento riuscito (payload fattura): l'abbonamento è attivo e non in
+      // disdetta. Non contiene variant_id/renews_at, quindi non tocchiamo
+      // quelle colonne (restano invariate nell'upsert).
       const dati = {
         user_id: userId,
         subscription_status: 'pro',
+        subscription_cancel_at_period_end: false,
+        subscription_ends_at: null,
         updated_at: new Date().toISOString()
       }
-      if (piano) dati.subscription_plan = piano
-      if (attributi.renews_at) dati.subscription_renews_at = attributi.renews_at
-      if (subscriptionId != null) dati.lemonsqueezy_subscription_id = String(subscriptionId)
+      if (attributi.subscription_id != null) {
+        dati.lemonsqueezy_subscription_id = String(attributi.subscription_id)
+      }
       if (attributi.customer_id != null) dati.lemonsqueezy_customer_id = String(attributi.customer_id)
 
       const { error } = await supabaseAdmin
         .from('abbonamenti')
         .upsert(dati, { onConflict: 'user_id' })
       if (error) throw error
-    } else if (EVENTI_DISATTIVAZIONE.includes(nomeEvento)) {
-      const { error } = await supabaseAdmin
-        .from('abbonamenti')
-        .update({ subscription_status: 'free', updated_at: new Date().toISOString() })
-        .eq('user_id', userId)
-      if (error) throw error
+    } else if (EVENTI_SOTTOSCRIZIONE.includes(nomeEvento)) {
+      const statoSub = attributi.status // active | on_trial | past_due | cancelled | expired | ...
+      const scaduto = statoSub === 'expired' || nomeEvento === 'subscription_expired'
+      const disdetto = !scaduto && (statoSub === 'cancelled' || nomeEvento === 'subscription_cancelled')
+
+      if (scaduto) {
+        // Fine del periodo pagato: l'utente torna al piano gratuito. Le
+        // simulazioni salvate NON vengono toccate (restano nel suo account).
+        const { error } = await supabaseAdmin
+          .from('abbonamenti')
+          .update({
+            subscription_status: 'free',
+            subscription_cancel_at_period_end: false,
+            subscription_ends_at: null,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', userId)
+        if (error) throw error
+      } else {
+        // Attivo oppure disdetto-in-grazia: in entrambi i casi il Pro resta
+        // attivo. Con la disdetta salviamo la data di fine accesso (fine del
+        // periodo già pagato): Lemon Squeezy la mette in ends_at, in fallback
+        // usiamo renews_at.
+        const piano = attributi.variant_id != null ? pianoDaVariantId(attributi.variant_id) : null
+        const dati = {
+          user_id: userId,
+          subscription_status: 'pro',
+          subscription_cancel_at_period_end: disdetto,
+          subscription_ends_at: disdetto ? (attributi.ends_at ?? attributi.renews_at ?? null) : null,
+          updated_at: new Date().toISOString()
+        }
+        if (piano) dati.subscription_plan = piano
+        if (attributi.renews_at) dati.subscription_renews_at = attributi.renews_at
+        if (evento?.data?.id != null) dati.lemonsqueezy_subscription_id = String(evento.data.id)
+        if (attributi.customer_id != null) dati.lemonsqueezy_customer_id = String(attributi.customer_id)
+
+        const { error } = await supabaseAdmin
+          .from('abbonamenti')
+          .upsert(dati, { onConflict: 'user_id' })
+        if (error) throw error
+      }
     }
   } catch (err) {
     console.error('Errore aggiornamento abbonamento da webhook Lemon Squeezy:', err)
